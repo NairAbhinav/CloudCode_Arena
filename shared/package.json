@@ -1,0 +1,14 @@
+{
+  "name": "@cloudcode-arena/shared",
+  "version": "1.0.0",
+  "description": "Shared models, middleware, and database utilities for CloudCode Arena",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Shared package compiled\""
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.0"
+  }
+}

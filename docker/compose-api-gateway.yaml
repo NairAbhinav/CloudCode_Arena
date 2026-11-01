@@ -1,0 +1,23 @@
+# CloudCode Arena - API Gateway & Reverse Proxy (GCP Deployment)
+services:
+  api-gateway:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/api-gateway:latest
+    container_name: cca-api-gateway
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - API_GATEWAY_PORT=5000
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://${INTERNAL_AUTH_IP:-${INTERNAL_BACKEND_IP}}:5001}
+      - ASSESSMENT_SERVICE_URL=${ASSESSMENT_SERVICE_URL:-http://${INTERNAL_ASSESSMENT_IP:-${INTERNAL_BACKEND_IP}}:5002}
+      - SUBMISSION_SERVICE_URL=${SUBMISSION_SERVICE_URL:-http://${INTERNAL_SUBMISSION_IP:-${INTERNAL_BACKEND_IP}}:5003}
+      - REPORTING_SERVICE_URL=${REPORTING_SERVICE_URL:-http://${INTERNAL_REPORTING_IP:-${INTERNAL_BACKEND_IP}}:5004}
+      - CORS_ALLOWED_ORIGINS=${CORS_ORIGINS:-https://arena.yourdomain.com}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS:-60000}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS:-250}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

@@ -1,0 +1,22 @@
+# Deployment Group 4: Dedicated Secure MongoDB Datastore (Private VPC VM)
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=cloudcode_arena
+    volumes:
+      - mongo-data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+volumes:
+  mongo-data:
+    name: cloudcode_mongo_production_data

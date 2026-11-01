@@ -1,0 +1,20 @@
+# CloudCode Arena - Auth & User Management Service (GCP Deployment)
+services:
+  auth-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/auth-service:latest
+    container_name: cca-auth-service
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=5001
+      - MONGO_URI=${MONGO_URI:-mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-24h}
+      - BOOTSTRAP_ADMIN_KEY=${BOOTSTRAP_ADMIN_KEY:-}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

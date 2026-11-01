@@ -1,0 +1,27 @@
+# CloudCode Arena - Dedicated MongoDB Datastore (GCP Deployment)
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: cca-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=cloudcode_arena
+    volumes:
+      - mongo-data:/data/db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongo-data:
+    name: cloudcode_mongo_production_data

@@ -1,0 +1,180 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. MongoDB Datastore (cloudcode_arena)
+  # ----------------------------------------------------------------------------
+  mongodb:
+    image: mongo:7.0
+    container_name: cca-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=cloudcode_arena
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - cloudcode-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 2. Authentication and User Service
+  # ----------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: cca-auth-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=5001
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production_cloudcode_arena_2026}
+      - JWT_EXPIRES_IN=24h
+      - BOOTSTRAP_ADMIN_KEY=${BOOTSTRAP_ADMIN_KEY:-local_dev_bootstrap_admin_secret_key_98765}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 3. Question and Assessment Service
+  # ----------------------------------------------------------------------------
+  assessment-service:
+    build:
+      context: .
+      dockerfile: services/assessment-service/Dockerfile
+    container_name: cca-assessment-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - ASSESSMENT_SERVICE_PORT=5002
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production_cloudcode_arena_2026}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 4. Isolated Code Runner Service
+  # ----------------------------------------------------------------------------
+  code-runner:
+    build:
+      context: ./code-runner
+      dockerfile: Dockerfile
+    container_name: cca-code-runner
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - CODE_RUNNER_PORT=5005
+      - CODE_EXEC_TIMEOUT_MS=5000
+      - MAX_OUTPUT_SIZE_BYTES=65536
+      - MAX_CODE_SIZE_BYTES=65536
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 5. Submission and Automated Evaluation Service
+  # ----------------------------------------------------------------------------
+  submission-service:
+    build:
+      context: .
+      dockerfile: services/submission-service/Dockerfile
+    container_name: cca-submission-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - SUBMISSION_SERVICE_PORT=5003
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - CODE_RUNNER_URL=http://code-runner:5005
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production_cloudcode_arena_2026}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      code-runner:
+        condition: service_started
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 6. Reporting, Analytics, and Anti-Cheating Service
+  # ----------------------------------------------------------------------------
+  reporting-service:
+    build:
+      context: .
+      dockerfile: services/reporting-service/Dockerfile
+    container_name: cca-reporting-service
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REPORTING_SERVICE_PORT=5004
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_change_in_production_cloudcode_arena_2026}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 7. API Gateway (Reverse Proxy Entrypoint)
+  # ----------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: cca-api-gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - API_GATEWAY_PORT=5000
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - ASSESSMENT_SERVICE_URL=http://assessment-service:5002
+      - SUBMISSION_SERVICE_URL=http://submission-service:5003
+      - REPORTING_SERVICE_URL=http://reporting-service:5004
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - RATE_LIMIT_WINDOW_MS=60000
+      - RATE_LIMIT_MAX_REQUESTS=250
+    depends_on:
+      - auth-service
+      - assessment-service
+      - submission-service
+      - reporting-service
+    networks:
+      - cloudcode-network
+
+  # ----------------------------------------------------------------------------
+  # 8. React Vite Frontend Client
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cca-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - api-gateway
+    networks:
+      - cloudcode-network
+
+networks:
+  cloudcode-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    name: cloudcode_mongo_data

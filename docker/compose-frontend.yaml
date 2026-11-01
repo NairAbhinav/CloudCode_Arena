@@ -1,0 +1,16 @@
+# CloudCode Arena - React Vite Frontend Client (GCP Deployment)
+services:
+  frontend:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/frontend:latest
+    container_name: cca-frontend
+    restart: always
+    ports:
+      - "80:3000"
+      - "443:3000"
+    environment:
+      - VITE_API_URL=${PUBLIC_API_URL:-https://api.arena.yourdomain.com}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

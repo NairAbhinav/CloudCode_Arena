@@ -1,0 +1,48 @@
+# Deployment Group 2: Internal Core Backend Microservices (Private VPC VM)
+version: '3.8'
+
+services:
+  auth-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/auth-service:latest
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=5001
+      - MONGO_URI=mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}
+
+  assessment-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/assessment-service:latest
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      - NODE_ENV=production
+      - ASSESSMENT_SERVICE_PORT=5002
+      - MONGO_URI=mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}
+
+  submission-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/submission-service:latest
+    restart: always
+    ports:
+      - "5003:5003"
+    environment:
+      - NODE_ENV=production
+      - SUBMISSION_SERVICE_PORT=5003
+      - MONGO_URI=mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena
+      - CODE_RUNNER_URL=http://${INTERNAL_RUNNER_IP}:5005
+      - JWT_SECRET=${JWT_SECRET}
+
+  reporting-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/reporting-service:latest
+    restart: always
+    ports:
+      - "5004:5004"
+    environment:
+      - NODE_ENV=production
+      - REPORTING_SERVICE_PORT=5004
+      - MONGO_URI=mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}

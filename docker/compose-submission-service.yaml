@@ -1,0 +1,19 @@
+# CloudCode Arena - Submission & Grading Service (GCP Deployment)
+services:
+  submission-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/submission-service:latest
+    container_name: cca-submission-service
+    restart: always
+    ports:
+      - "5003:5003"
+    environment:
+      - NODE_ENV=production
+      - SUBMISSION_SERVICE_PORT=5003
+      - MONGO_URI=${MONGO_URI:-mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena}
+      - CODE_RUNNER_URL=${CODE_RUNNER_URL:-http://${INTERNAL_RUNNER_IP}:5005}
+      - JWT_SECRET=${JWT_SECRET}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

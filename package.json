@@ -1,0 +1,46 @@
+{
+  "name": "cloudcode-arena",
+  "version": "1.0.0",
+  "description": "Cloud-ready coding practice and assessment platform for students, faculty, and administrators.",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "api-gateway",
+    "services/*",
+    "code-runner",
+    "frontend"
+  ],
+  "scripts": {
+    "bootstrap": "npm install",
+    "seed": "node scripts/docker-seed.js",
+    "test": "node scripts/run-all-tests.js",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:security": "jest tests/security",
+    "test:e2e": "jest tests/end-to-end",
+    "start:gateway": "node api-gateway/src/index.js",
+    "start:auth": "node services/auth-service/src/index.js",
+    "start:assessment": "node services/assessment-service/src/index.js",
+    "start:submission": "node services/submission-service/src/index.js",
+    "start:reporting": "node services/reporting-service/src/index.js",
+    "start:runner": "node code-runner/src/index.js",
+    "dev:backend": "node scripts/dev-backend.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "keywords": [
+    "coding-assessment",
+    "monaco-editor",
+    "python-sandbox",
+    "anti-cheating",
+    "education"
+  ],
+  "author": "CloudCode Arena Team",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}

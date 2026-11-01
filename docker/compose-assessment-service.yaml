@@ -1,0 +1,18 @@
+# CloudCode Arena - Question & Assessment Service (GCP Deployment)
+services:
+  assessment-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/assessment-service:latest
+    container_name: cca-assessment-service
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      - NODE_ENV=production
+      - ASSESSMENT_SERVICE_PORT=5002
+      - MONGO_URI=${MONGO_URI:-mongodb://${INTERNAL_DB_IP}:27017/cloudcode_arena}
+      - JWT_SECRET=${JWT_SECRET}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

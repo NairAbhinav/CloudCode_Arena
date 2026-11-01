@@ -1,0 +1,107 @@
+# Production Multi-Container Compose Configuration
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    restart: always
+    environment:
+      - MONGO_INITDB_DATABASE=cloudcode_arena
+    volumes:
+      - mongo-production-data:/data/db
+    networks:
+      - cloudcode-prod-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/auth-service:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=5001
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - cloudcode-prod-network
+
+  assessment-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/assessment-service:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - ASSESSMENT_SERVICE_PORT=5002
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - cloudcode-prod-network
+
+  code-runner:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/code-runner:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - CODE_RUNNER_PORT=5005
+      - CODE_EXEC_TIMEOUT_MS=5000
+    networks:
+      - cloudcode-prod-network
+
+  submission-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/submission-service:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - SUBMISSION_SERVICE_PORT=5003
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - CODE_RUNNER_URL=http://code-runner:5005
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - cloudcode-prod-network
+
+  reporting-service:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/reporting-service:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - REPORTING_SERVICE_PORT=5004
+      - MONGO_URI=mongodb://mongodb:27017/cloudcode_arena
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - cloudcode-prod-network
+
+  api-gateway:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/api-gateway:latest
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - API_GATEWAY_PORT=5000
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - ASSESSMENT_SERVICE_URL=http://assessment-service:5002
+      - SUBMISSION_SERVICE_URL=http://submission-service:5003
+      - REPORTING_SERVICE_URL=http://reporting-service:5004
+      - CORS_ALLOWED_ORIGINS=https://arena.yourdomain.com
+    networks:
+      - cloudcode-prod-network
+
+  frontend:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/frontend:latest
+    restart: always
+    ports:
+      - "80:3000"
+    environment:
+      - VITE_API_URL=https://api.arena.yourdomain.com
+    networks:
+      - cloudcode-prod-network
+
+networks:
+  cloudcode-prod-network:
+    driver: bridge
+
+volumes:
+  mongo-production-data:
+    name: cloudcode_mongo_production_data

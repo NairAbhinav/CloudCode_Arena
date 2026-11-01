@@ -1,0 +1,20 @@
+# Deployment Group 3: Dedicated Hardened Sandbox Code Runner (Isolated VPC VM)
+version: '3.8'
+
+services:
+  code-runner:
+    image: ${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REGISTRY_REPO}/code-runner:latest
+    restart: always
+    ports:
+      - "5005:5005"
+    environment:
+      - NODE_ENV=production
+      - CODE_RUNNER_PORT=5005
+      - CODE_EXEC_TIMEOUT_MS=5000
+      - MAX_OUTPUT_SIZE_BYTES=65536
+      - MAX_CODE_SIZE_BYTES=65536
+    # Docker socket mounted ONLY in dedicated sandbox runner if containerized runner mode is active
+    # volumes:
+    #   - /var/run/docker.sock:/var/run/docker.sock
+    security_opt:
+      - no-new-privileges:true
