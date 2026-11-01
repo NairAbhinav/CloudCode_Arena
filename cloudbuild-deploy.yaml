@@ -1,0 +1,27 @@
+substitutions:
+  _GATEWAY_URL: https://cca-gateway-955676280056.us-central1.run.app
+steps:
+  - {name: gcr.io/cloud-builders/docker, args: ['build','--build-arg','VITE_API_URL=${_GATEWAY_URL}','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/frontend:$BUILD_ID','./frontend']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/api-gateway:$BUILD_ID','./api-gateway']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-f','services/auth-service/Dockerfile','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/auth-service:$BUILD_ID','.']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-f','services/assessment-service/Dockerfile','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/assessment-service:$BUILD_ID','.']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-f','services/submission-service/Dockerfile','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/submission-service:$BUILD_ID','.']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-f','services/reporting-service/Dockerfile','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/reporting-service:$BUILD_ID','.']}
+  - {name: gcr.io/cloud-builders/docker, args: ['build','-t','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/code-runner:$BUILD_ID','./code-runner']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/frontend']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/api-gateway']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/auth-service']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/assessment-service']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/submission-service']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/reporting-service']}
+  - {name: gcr.io/cloud-builders/docker, args: ['push','--all-tags','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/code-runner']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-frontend','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/frontend:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-gateway','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/api-gateway:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-auth','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/auth-service:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-assessment','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/assessment-service:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-submission','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/submission-service:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-reporting','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/reporting-service:$BUILD_ID']}
+  - {name: gcr.io/google.com/cloudsdktool/cloud-sdk, entrypoint: gcloud, args: ['run','services','update','cca-runner','--region','us-central1','--image','us-central1-docker.pkg.dev/cloudcode-arena/cloudcode-arena-repo/code-runner:$BUILD_ID']}
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 3600s
